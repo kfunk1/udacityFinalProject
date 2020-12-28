@@ -1,7 +1,8 @@
 import * as React from 'react'
+import { History } from 'history'
 import { Form, Button } from 'semantic-ui-react'
 import Auth from '../auth/Auth'
-import { getUploadUrl, uploadFile } from '../api/todos-api'
+import { getUploadUrl, uploadFile } from '../api/notes-api'
 
 enum UploadState {
   NoUpload,
@@ -9,25 +10,26 @@ enum UploadState {
   UploadingFile,
 }
 
-interface EditTodoProps {
+interface EditNoteProps {
   match: {
     params: {
-      todoId: string
+      noteId: string,
     }
   }
   auth: Auth
+  history: History
 }
 
-interface EditTodoState {
+interface EditNoteState {
   file: any
   uploadState: UploadState
 }
 
-export class EditTodo extends React.PureComponent<
-  EditTodoProps,
-  EditTodoState
+export default class EditAttachmentNote extends React.PureComponent<
+  EditNoteProps,
+  EditNoteState
 > {
-  state: EditTodoState = {
+  state: EditNoteState = {
     file: undefined,
     uploadState: UploadState.NoUpload
   }
@@ -51,12 +53,13 @@ export class EditTodo extends React.PureComponent<
       }
 
       this.setUploadState(UploadState.FetchingPresignedUrl)
-      const uploadUrl = await getUploadUrl(this.props.auth.getIdToken(), this.props.match.params.todoId)
+      const uploadUrl = await getUploadUrl(this.props.auth.getIdToken(), this.props.match.params.noteId)
 
       this.setUploadState(UploadState.UploadingFile)
       await uploadFile(uploadUrl, this.state.file)
 
       alert('File was uploaded!')
+      this.props.history.push("/");
     } catch (e) {
       alert('Could not upload a file: ' + e.message)
     } finally {
@@ -73,8 +76,6 @@ export class EditTodo extends React.PureComponent<
   render() {
     return (
       <div>
-        <h1>Upload new image</h1>
-
         <Form onSubmit={this.handleSubmit}>
           <Form.Field>
             <label>File</label>
@@ -86,13 +87,13 @@ export class EditTodo extends React.PureComponent<
             />
           </Form.Field>
 
-          {this.renderButton()}
+          {this.renderUploadButton()}
         </Form>
       </div>
     )
   }
 
-  renderButton() {
+  renderUploadButton() {
 
     return (
       <div>

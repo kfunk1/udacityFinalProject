@@ -1,5 +1,5 @@
 service:
-  name: serverless-todo-app
+  name: final-note-app
 
 plugins:
   - serverless-webpack
@@ -20,8 +20,8 @@ provider:
 
   environment:
     AUTH_0_SECRET_CERT: Auth0Secret-${self:provider.stage}
-    TODO_TABLE: Todo-${self:provider.stage}
-    IMAGES_S3_BUCKET: serverless-todo-images-717495401509-${self:provider.stage}
+    NOTE_TABLE: Note-${self:provider.stage}
+    IMAGES_S3_BUCKET: final-notes-717495401509-${self:provider.stage}
     SIGNED_URL_EXPIRATION: 300
 
   iamRoleStatements:
@@ -36,21 +36,19 @@ functions:
   RS256Auth:
     handler: src/lambda/auth/rs256Auth0Authorizer.handler
 
-  # TODO:DONE Add canary
-  # TODO:DONE Configure this function
-  GetTodos:
-    handler: src/lambda/http/getTodos.handler
+  GetNotess:
+    handler: src/lambda/http/getNotes.handler
     events:
       - http:
           method: get
-          path: todos
+          path: Notes
           cors: true
           authorizer: RS256Auth
     iamRoleStatements:
       - Effect: Allow
         Action:
           - dynamodb:Query
-        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.NOTE_TABLE}
       - Effect: Allow
         Action:
           - s3:GetObject
@@ -60,81 +58,77 @@ functions:
       alias: Live
 
 
-  # TODO:DONE Configure this function
-  CreateTodo:
-    handler: src/lambda/http/createTodo.handler
+  CreateNote:
+    handler: src/lambda/http/createNote.handler
     events:
       - http:
           method: post
-          path: todos
+          path: notes
           cors: true
           authorizer: RS256Auth
           reqValidatorName: RequestBodyValidator
           documentation:
-            summary: Create a new Todo
-            description: Create a new Todo
+            summary: Create a new Note
+            description: Create a new Note
             requestModels:
-              'application/json': TodoCreateRequest
+              'application/json': NoteCreateRequest
     iamRoleStatements:
       - Effect: Allow
         Action:
           - dynamodb:PutItem
-        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.NOTE_TABLE}
     deploymentSettings:
       type: Linear10PercentEvery1Minute
       alias: Live
 
 
-  # TODO:DONE Configure this function
-  UpdateTodo:
-    handler: src/lambda/http/updateTodo.handler
+  UpdateNote:
+    handler: src/lambda/http/updateNote.handler
     events:
       - http:
           method: patch
-          path: todos/{todoId}
+          path: notes/{noteId}
           cors: true
           authorizer: RS256Auth
           reqValidatorName: RequestBodyValidator
           documentation:
-            summary: Update a Todo
-            description: Update a Todo
+            summary: Update a Note
+            description: Update a Note
             requestModels:
-              'application/json': TodoUpdateRequest
+              'application/json': NoteUpdateRequest
     iamRoleStatements:
       - Effect: Allow
         Action:
           - dynamodb:putItem
           - dynamodb:getItem
-        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.NOTE_TABLE}
     deploymentSettings:
       type: Linear10PercentEvery1Minute
       alias: Live
 
-  # TODO:DONE Configure this function
-  DeleteTodo:
-    handler: src/lambda/http/deleteTodo.handler
+  DeleteNote:
+    handler: src/lambda/http/deleteNote.handler
     events:
       - http:
           method: delete
-          path: todos/{todoId}
+          path: notes/{noteId}
           cors: true
           authorizer: RS256Auth
     iamRoleStatements:
       - Effect: Allow
         Action:
           - dynamodb:DeleteItem
-        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.NOTE_TABLE}
     deploymentSettings:
       type: Linear10PercentEvery1Minute
       alias: Live
 
-  # TODO:DONE Configure this function
   GenerateUploadUrl:
     handler: src/lambda/http/generateUploadUrl.handler
     events:
       - http:
           method: post
-          path: todos/{todoId}/attachment
+          path: notes/{noteId}/attachment
           cors: true
           authorizer: RS256Auth
     iamRoleStatements:
@@ -147,7 +141,7 @@ functions:
         Action:
           - dynamodb:putItem
           - dynamodb:getItem
-        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.NOTE_TABLE}
     deploymentSettings:
       type: Linear10PercentEvery1Minute
       alias: Live
@@ -166,34 +160,33 @@ custom:
     api:
       info:
         version: v1.0.0
-        title: TODO API
+        title: NOTE API
         description: Serverless application for list of things to do
     models:
-      - name: TodoCreateRequest
+      - name: NoteCreateRequest
         contentType: application/json
-        schema: ${file(src/requests/create-todo-request.json)}
-      - name: TodoUpdateRequest
+        schema: ${file(src/requests/create-note-request.json)}
+      - name: NoteUpdateRequest
         contentType: application/json
-        schema: ${file(src/requests/update-todo-request.json)}
+        schema: ${file(src/requests/update-note-request.json)}
 
 resources:
   Resources:
-    # TODO:DONE Add any necessary AWS resources
-    TodoDynamoDBTable:
+    NoteDynamoDBTable:
       Type: AWS::DynamoDB::Table
       Properties:
         AttributeDefinitions:
           - AttributeName: userId
             AttributeType: S
-          - AttributeName: todoId
+          - AttributeName: noteId
             AttributeType: S
         KeySchema:
           - AttributeName: userId
             KeyType: HASH
-          - AttributeName: todoId
+          - AttributeName: noteId
             KeyType: RANGE
         BillingMode: PAY_PER_REQUEST
-        TableName: ${self:provider.environment.TODO_TABLE}
+        TableName: ${self:provider.environment.NOTE_TABLE}
 
     RequestBodyValidator:
       Type: AWS::ApiGateway::RequestValidator

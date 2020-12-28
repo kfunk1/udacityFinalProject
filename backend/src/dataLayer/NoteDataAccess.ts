@@ -3,60 +3,60 @@ import * as AWSXRay from 'aws-xray-sdk'
 const XAWS = AWSXRay.captureAWS(AWS)
 
 import { DocumentClient } from 'aws-sdk/clients/dynamodb'
-import { TodoItem } from '../models/TodoItem'
+import { NoteItem } from '../models/NoteItem'
 
-export class TodoItemAccess {
+export class NoteItemAccess {
   constructor(
     private readonly docClient: DocumentClient = createDynamoDBClient(),
-    private readonly todoTable = process.env.TODO_TABLE
+    private readonly noteTable = process.env.NOTE_TABLE
   ) {}
 
-  async getAllTodos(userId: string): Promise<TodoItem[]> {
-    console.log('Getting all Todos')
+  async getAllNotes(userId: string): Promise<NoteItem[]> {
+    console.log('Getting all Notes')
 
     const result = await this.docClient
       .query({
-        TableName: this.todoTable,
+        TableName: this.noteTable,
         KeyConditionExpression: 'userId = :u',
         ExpressionAttributeValues: { ':u': userId }
       })
       .promise()
 
     const items = result.Items
-    return items as TodoItem[]
+    return items as NoteItem[]
   }
 
-  async getTodo(userId: string, todoId: string): Promise<TodoItem> {
+  async getNote(userId: string, noteId: string): Promise<NoteItem> {
     const result = await this.docClient
       .get({
-        TableName: this.todoTable,
+        TableName: this.noteTable,
         Key: {
           userId,
-          todoId
+          noteId
         }
       })
       .promise()
 
-    return result.Item as TodoItem
+    return result.Item as NoteItem
   }
 
-  async putTodo(todoItem: TodoItem): Promise<TodoItem> {
-    console.log('todoItem', todoItem)
+  async putNote(noteItem: NoteItem): Promise<NoteItem> {
+    console.log('noteItem', noteItem)
     await this.docClient
       .put({
-        TableName: this.todoTable,
-        Item: todoItem
+        TableName: this.noteTable,
+        Item: noteItem
       })
       .promise()
 
-    return todoItem
+    return noteItem
   }
 
-  async deleteTodo(userId: string, todoId: string): Promise<boolean> {
+  async deleteNote(userId: string, noteId: string): Promise<boolean> {
     await this.docClient
       .delete({
-        TableName: this.todoTable,
-        Key: { userId, todoId }
+        TableName: this.noteTable,
+        Key: { userId, noteId }
       })
       .promise()
     return true

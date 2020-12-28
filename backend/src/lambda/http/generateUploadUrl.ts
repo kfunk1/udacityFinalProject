@@ -3,7 +3,7 @@ import 'source-map-support/register'
 import { createLogger } from '../../utils/logger'
 const logger = createLogger('generateUploadUrl')
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
-import { getTodo, updateImageTodo } from '../../businessLogic/todo'
+import { getNote, updateImageNote } from '../../businessLogic/note'
 import * as uuid from 'uuid'
 import { getUploadUrl } from '../../businessLogic/image'
 import * as middy from 'middy'
@@ -11,16 +11,15 @@ import { cors } from 'middy/middlewares'
 
 export const handler = middy(
   async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-    // TODO:DONE Return a presigned URL to upload a file for a TODO item with the provided id
     logger.info('Getting signed url for s3', event)
-    const todoId = event.pathParameters.todoId
-    let item = await getTodo(todoId, event)
+    const noteId = event.pathParameters.noteId
+    let item = await getNote(noteId, event)
     console.log('item', item)
     if (!item) {
       return {
         statusCode: 404,
         body: JSON.stringify({
-          error: 'Todo does not exist.'
+          error: 'Note does not exist.'
         })
       }
     }
@@ -28,7 +27,7 @@ export const handler = middy(
     const imageId = uuid.v4()
     const url = await getUploadUrl(imageId)
 
-    const newItem = await updateImageTodo(item, imageId)
+    const newItem = await updateImageNote(item, imageId)
 
     return {
       statusCode: 201,
